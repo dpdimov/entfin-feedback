@@ -1,13 +1,16 @@
-import { kv } from "@vercel/kv";
+import Redis from "ioredis";
 import { NextResponse } from "next/server";
 
-const KV_KEY = "analytics:submissions";
+const redis = new Redis(process.env.REDIS_URL);
+
+const KEY = "analytics:submissions";
 
 // GET — load all submissions
 export async function GET() {
   try {
-    const entries = await kv.get(KV_KEY);
-    return NextResponse.json(entries || []);
+    const raw = await redis.get(KEY);
+    const entries = raw ? JSON.parse(raw) : [];
+    return NextResponse.json(entries);
   } catch (err) {
     console.error("Failed to load analytics:", err);
     return NextResponse.json([], { status: 500 });
@@ -18,12 +21,13 @@ export async function GET() {
 export async function POST(request) {
   try {
     const entry = await request.json();
-    const existing = (await kv.get(KV_KEY)) || [];
+    const raw = await redis.get(KEY);
+    const existing = raw ? JSON.parse(raw) : [];
     existing.push({
       ...entry,
       timestamp: new Date().toISOString(),
     });
-    await kv.set(KV_KEY, existing);
+    await redis.set(KEY, JSON.stringify(existing));
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to log submission:", err);
@@ -34,7 +38,7 @@ export async function POST(request) {
 // DELETE — reset all analytics
 export async function DELETE() {
   try {
-    await kv.del(KV_KEY);
+    await redis.del(KEY);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to reset analytics:", err);
