@@ -692,7 +692,7 @@ Remember to append your diagnostic tags at the very end.`;
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6",
           max_tokens: 1000,
           system: RUBRIC_CONTEXT,
           messages: [{ role: "user", content: userPrompt }],
